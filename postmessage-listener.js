@@ -3,7 +3,7 @@
   if (window.__postMessageListenerAttached) return
   window.__postMessageListenerAttached = true
 
-  var allowedSenderOrigins = ['https://ai.dnv.com']   // the iframe origin
+  var allowedSenderOrigins = ['https://ai.dnv.com']   
   var dataLayerName = 'dataLayer'
 
   function parseMaybeJson (v) {
@@ -24,13 +24,13 @@
     var payload = parseMaybeJson(e.data)
     if (!payload || typeof payload !== 'object') return
 
-    // only accept your sender format
+    
     if (payload.event !== 'iframe_event') return
 
     var dl = window[dataLayerName] = window[dataLayerName] || []
     dl.push({
       event: 'iframe_event',
-      postMessageData: payload,         // contains event_name, click_url, page_location, etc
+      postMessageData: payload,        
       postMessageOrigin: e.origin
     })
   }
