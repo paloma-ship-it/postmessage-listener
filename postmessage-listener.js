@@ -4,9 +4,16 @@
 
   var allowedSenderOrigins = ['https://ai.dnv.com']
   var dataLayerName = 'dataLayer'
-  var acceptNullOrigin = false
+  var acceptNullOrigin = false   
+  var allowedSources = new Set()
+  var seq = 0
+  var DEBUG = false
 
-  function isAllowedOrigin (origin) {
+  function log () {
+    if (DEBUG && console && console.debug) console.debug.apply(console, arguments)
+  }
+
+  function originAllowed (origin) {
     if (origin === 'null') return !!acceptNullOrigin
     for (var i = 0; i < allowedSenderOrigins.length; i++) {
       if (origin === allowedSenderOrigins[i]) return true
@@ -22,19 +29,31 @@
   }
 
   function onMessage (e) {
-    var origin = e.origin || (e.originalEvent && e.originalEvent.origin) || ''
-    if (!isAllowedOrigin(origin)) return
+    var origin = e.origin || ''
+    
+    if (!allowedSources.has(e.source)) {
+      if (!originAllowed(origin)) {
+        log('reject by origin', origin)
+        return
+      }
+      allowedSources.add(e.source)
+    }
 
     var payload = parsePayload(e.data)
-    if (!payload || payload.event !== 'iframe_event') return
+    if (!payload || payload.event !== 'iframe_event') {
+      log('reject by payload', payload && payload.event)
+      return
+    }
 
-    var dl = (window[dataLayerName] = window[dataLayerName] || [])
+    var dl = window[dataLayerName] = window[dataLayerName] || []
     dl.push({
       event: 'iframe_event',
       postMessageData: payload,
       postMessageOrigin: origin,
-      pm_timestamp: Date.now()
+      pm_seq: ++seq,
+      pm_time: Date.now()
     })
+    log('pushed to dataLayer. length=', dl.length, 'seq=', seq)
   }
 
   if (window.addEventListener) {
